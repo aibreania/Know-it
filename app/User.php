@@ -1,38 +1,89 @@
 <?php
 
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Database\Migrations\Migration;
+namespace App;
 
-class CreateTableQuestions extends Migration
+use Illuminate\Database\Eloquent\Model;
+use Request;
+use Hash;
+
+class User extends Model
 {
-    /**
-     * Run the migrations.
-     *
-     * @return void
-     */
-    public function up()
+    public function signup()
     {
-        Schema::create('questions', function (Blueprint $table) {
-            $table->increments('id');
-            $table->string('title',64);
-            $table->text('desc')->nullable()->comment('description');
-            $table->unsignedInteger('user_id');
-            $table->unsignedInteger('admin_id');
-            $table->timestamps();
-            $table->string('status')->default('ok');
+        $check = $this->has_username_and_password();
 
-            $table->foreign('user_id')->references('id')->on('users');
-        });
+        if(!$check)
+            return ['status' => 0, 'msg' => 'Username and password cannot be empty'];
+
+        $username = $check[0];
+        $password = $check[1];
+
+        $user_exists = $this
+            ->where('username', $username)
+            ->exists();
+        if($user_exists)
+            return ['status' => 0, 'msg' => 'Username already used'];
+
+        $hashed_password = Hash::make($password);
+
+        $user = $this;
+        $user->password = $hashed_password;
+        $user->username = $username;
+        if($user->save())
+            return ['status' => 1, 'id' => $user->id];
+        else
+            return ['status' => 0, 'msg' => 'DB insert failed'];
     }
 
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
-    public function down()
-    {
-        Schema::dropIfExists('questions');
+
+    public function has_username_and_password() {
+        $username = Request::get('username');
+        $password = Request::get('password');
+
+        if($username && $password)
+            return [$username, $password];
+        return false;
+    }
+
+    public function login() {
+        $check = $this->has_username_and_password();
+        if(!$check)
+            return ['status' => 0, 'msg' => 'Username and password cannot be empty'];
+        $username = $check[0];
+        $password = $check[1];
+
+        $user = $this->where('username', $username)->first();
+
+        if(!$user)
+            return ['status' => 0, 'msg' => 'User not exist'];
+
+        $hashed_password = $user->password;
+        if(!Hash::check($password, $hashed_password))
+            return ['status' => 0, 'msg' => 'Wrong password'];
+
+        session()->put('username', $user->username);
+        session()->put('user_id', $user->id);
+
+
+        return ['status' => 1, 'id' => $user->id];
+
+    }
+
+    public function is_logged_in() {
+        return session('user_id') ? : false;
+    }
+
+    public function logout() {
+        //session()->flush();
+        //session()->put('username', null);
+        //session()->put('user_id', null);
+        //$username = session()->pull('username');
+        //session()->set('person.name', 'Alex');
+        //session()->set('person.friend.Hannah.age.sex.air', '20');
+        session()->forget('username');
+        session()->forget('user_id');
+        //dd(session()->all());
+        //return redirect('/');
+        return ['status', 1];
     }
 }
