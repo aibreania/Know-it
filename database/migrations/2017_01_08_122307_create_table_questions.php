@@ -18,7 +18,7 @@ class CreateTableQuestions extends Migration
             $table->string('title',64);
             $table->text('desc')->nullable()->comment('description');
             $table->unsignedInteger('user_id');
-            $table->unsignedInteger('admin_id');
+            //$table->unsignedInteger('admin_id');
             $table->timestamps();
             $table->string('status')->default('ok');
 
