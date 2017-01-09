@@ -10,8 +10,18 @@
 | to using a Closure or controller method. Build something great!
 |
 */
+function rq($key=null, $default=null)
+{
+  if(!$key) return Request::all();
+  return Request::get($key, $default);
+}
+
 function user_ins() {
   return new App\User;
+}
+
+function question_ins() {
+  return new App\Question;
 }
 
 Route::get('/', function () {
@@ -32,6 +42,22 @@ Route::any('api/login', function(){
 
 Route::any('api/logout', function(){
     return user_ins()->logout();
+});
+
+Route::any('api/question/add', function(){
+    return question_ins()->add();
+});
+
+Route::any('api/question/change', function(){
+    return question_ins()->change();
+});
+
+Route::any('api/question/read', function(){
+    return question_ins()->read();
+});
+
+Route::any('api/question/remove', function(){
+    return question_ins()->remove();
 });
 
 Route::any('test', function(){
